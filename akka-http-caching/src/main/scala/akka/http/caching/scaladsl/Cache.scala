@@ -9,6 +9,7 @@ import java.util.concurrent.{ CompletableFuture, CompletionStage }
 
 import akka.annotation.{ ApiMayChange, DoNotInherit }
 import akka.japi.{ Creator, Procedure }
+import com.github.benmanes.caffeine.cache.AsyncCache
 
 import scala.collection.JavaConverters._
 import scala.collection.immutable
@@ -108,4 +109,9 @@ abstract class Cache[K, V] extends akka.http.caching.javadsl.Cache[K, V] {
    * (or by being thrown out by a capacity constraint).
    */
   def size(): Int
+
+  /**
+   * Returns the underlying Caffeine cache. Only meant to be able to record statistics.
+   */
+  def underlying: AsyncCache[K, V]
 }

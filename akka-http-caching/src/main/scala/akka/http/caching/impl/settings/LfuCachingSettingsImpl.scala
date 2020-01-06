@@ -18,7 +18,8 @@ private[http] final case class LfuCachingSettingsImpl(
   maxCapacity:     Int,
   initialCapacity: Int,
   timeToLive:      Duration,
-  timeToIdle:      Duration)
+  timeToIdle:      Duration,
+  recordStats:     Boolean)
   extends LfuCacheSettings {
   override def productPrefix = "LfuCacheSettings"
 }
@@ -32,7 +33,8 @@ private[http] object LfuCachingSettingsImpl extends SettingsCompanionImpl[LfuCac
       c.getInt("max-capacity"),
       c.getInt("initial-capacity"),
       c.getPotentiallyInfiniteDuration("time-to-live"),
-      c.getPotentiallyInfiniteDuration("time-to-idle")
+      c.getPotentiallyInfiniteDuration("time-to-idle"),
+      c.getBoolean(("record-stats"))
     )
   }
 }

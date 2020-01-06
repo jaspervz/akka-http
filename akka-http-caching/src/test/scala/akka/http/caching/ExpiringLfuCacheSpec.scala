@@ -155,6 +155,11 @@ class ExpiringLfuCacheSpec extends WordSpec with Matchers with BeforeAndAfterAll
     "be created with the same ttl and tti" in {
       lfuCache[Int](timeToLive = 5.seconds, timeToIdle = 5.seconds) shouldBe a[LfuCache[_, _]]
     }
+    "record statistics" in {
+      val cache = lfuCache[String](recordStats = true)
+      Await.result(cache.get(1, () => "A"), 3.seconds) should be("A")
+      cache.underlying.synchronous().stats.loadCount() should be(1)
+    }
   }
 
   override def afterAll(): Unit = {
@@ -162,7 +167,7 @@ class ExpiringLfuCacheSpec extends WordSpec with Matchers with BeforeAndAfterAll
   }
 
   def lfuCache[T](maxCapacity: Int = 500, initialCapacity: Int = 16,
-                  timeToLive: Duration = Duration.Inf, timeToIdle: Duration = Duration.Inf): LfuCache[Int, T] = {
+                  timeToLive: Duration = Duration.Inf, timeToIdle: Duration = Duration.Inf, recordStats: Boolean = false): LfuCache[Int, T] = {
     LfuCache[Int, T] {
       val settings = CachingSettings(system)
       settings.withLfuCacheSettings(
@@ -171,6 +176,7 @@ class ExpiringLfuCacheSpec extends WordSpec with Matchers with BeforeAndAfterAll
           .withInitialCapacity(initialCapacity)
           .withTimeToLive(timeToLive)
           .withTimeToIdle(timeToIdle)
+          .withRecordStats(recordStats)
       )
     }.asInstanceOf[LfuCache[Int, T]]
   }

@@ -38,8 +38,8 @@ object LfuCache {
     require(settings.maxCapacity >= 0, "maxCapacity must not be negative")
     require(settings.initialCapacity <= settings.maxCapacity, "initialCapacity must be <= maxCapacity")
 
-    if (settings.timeToLive.isFinite || settings.timeToIdle.isFinite) expiringLfuCache(settings.maxCapacity, settings.initialCapacity, settings.timeToLive, settings.timeToIdle)
-    else simpleLfuCache(settings.maxCapacity, settings.initialCapacity)
+    if (settings.timeToLive.isFinite || settings.timeToIdle.isFinite) expiringLfuCache(settings.maxCapacity, settings.initialCapacity, settings.recordStats, settings.timeToLive, settings.timeToIdle)
+    else simpleLfuCache(settings.maxCapacity, settings.initialCapacity, settings.recordStats)
   }
 
   /**
@@ -58,15 +58,22 @@ object LfuCache {
   def create[K, V](settings: javadsl.CachingSettings): akka.http.caching.javadsl.Cache[K, V] =
     apply(settings.asScala)
 
-  private def simpleLfuCache[K, V](maxCapacity: Int, initialCapacity: Int): LfuCache[K, V] = {
-    val store = Caffeine.newBuilder().asInstanceOf[Caffeine[K, V]]
+  private def simpleLfuCache[K, V](maxCapacity: Int, initialCapacity: Int, recordStats: Boolean): LfuCache[K, V] = {
+    val builder = Caffeine.newBuilder().asInstanceOf[Caffeine[K, V]]
       .initialCapacity(initialCapacity)
       .maximumSize(maxCapacity)
+
+    val store = recordStatistics(recordStats)(builder)
       .buildAsync[K, V]
     new LfuCache[K, V](store)
   }
 
-  private def expiringLfuCache[K, V](maxCapacity: Long, initialCapacity: Int,
+  private def recordStatistics[K, V](recordStats: Boolean): Caffeine[K, V] => Caffeine[K, V] = { builder =>
+    if (recordStats) builder.recordStats()
+    else builder
+  }
+
+  private def expiringLfuCache[K, V](maxCapacity: Long, initialCapacity: Int, recordStats: Boolean,
                                      timeToLive: Duration, timeToIdle: Duration): LfuCache[K, V] = {
     require(
       !timeToLive.isFinite || !timeToIdle.isFinite || timeToLive >= timeToIdle,
@@ -86,7 +93,7 @@ object LfuCache {
       .initialCapacity(initialCapacity)
       .maximumSize(maxCapacity)
 
-    val store = (ttl andThen tti)(builder).buildAsync[K, V]
+    val store = (ttl andThen tti andThen recordStatistics(recordStats))(builder).buildAsync[K, V]
     new LfuCache[K, V](store)
   }
 
@@ -132,4 +139,6 @@ private[caching] class LfuCache[K, V](val store: AsyncCache[K, V]) extends Cache
   def keys: Set[K] = store.synchronous().asMap().keySet().asScala.toSet
 
   override def size: Int = store.synchronous().asMap().size()
+
+  override def underlying: AsyncCache[K, V] = store
 }

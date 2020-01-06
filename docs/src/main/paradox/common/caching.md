@@ -12,6 +12,7 @@ featuring frequency-biased cache eviction semantics with support for
 time-based entry expiration.
 
  [Caffeine]: https://github.com/ben-manes/caffeine/
+ [Prometheus]: https://prometheus.io/
 
 ## Dependency
 
@@ -80,3 +81,11 @@ Java
 
 Scala
 :  @@snip [CachingDirectivesExamplesSpec.java]($root$/src/test/scala/docs/http/scaladsl/server/directives/CachingDirectivesExamplesSpec.scala) { #keyer-function #create-cache }
+
+## Prometheus statistics
+To gather [Prometheus] statistics, set `record-stats` to true under `akka.http.caching`.
+and use the following code
+```
+collector.addCache(label, cache.underlying.synchronous()
+```
+to record the statistics, where collector is a `io.prometheus.client.cache.caffeine.CacheMetricsCollector`.

@@ -22,11 +22,13 @@ abstract class LfuCacheSettings private[http] () { self: LfuCachingSettingsImpl 
   def getInitialCapacity: Int
   def getTimeToLive: Duration
   def getTimeToIdle: Duration
+  def isRecordStats: Boolean
 
   def withMaxCapacity(newMaxCapacity: Int): LfuCacheSettings = self.copy(maxCapacity = newMaxCapacity)
   def withInitialCapacity(newInitialCapacity: Int): LfuCacheSettings = self.copy(initialCapacity = newInitialCapacity)
   def withTimeToLive(newTimeToLive: Duration): LfuCacheSettings = self.copy(timeToLive = newTimeToLive)
   def withTimeToIdle(newTimeToIdle: Duration): LfuCacheSettings = self.copy(timeToIdle = newTimeToIdle)
+  def withRecordStats(newRecordStats: Boolean): LfuCacheSettings = self.copy(recordStats = newRecordStats)
 }
 
 object LfuCacheSettings extends SettingsCompanion[LfuCacheSettings] {
